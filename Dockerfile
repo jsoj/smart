@@ -3,4 +3,4 @@ WORKDIR /app
 RUN pip install streamlit pandas
 COPY . .
 EXPOSE 8501
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "app.py", "--server.port=3000", "--server.address=0.0.0.0"]
