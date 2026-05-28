@@ -1,55 +1,69 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import os
 
-# Configuração da página
-st.set_page_config(page_title="Gestão de Metas SMART", layout="wide")
-
+# Configuração e Carregamento
+st.set_page_config(page_title="Treinador SMART", layout="wide")
 DATA_FILE = "metas.csv"
 
-# Função para carregar ou criar o arquivo
 def load_data():
     if not os.path.exists(DATA_FILE):
-        return pd.DataFrame(columns=["Meta", "Categoria", "Prazo", "Status"])
+        return pd.DataFrame(columns=["Meta", "Categoria", "Prazo", "Status", "Especifico", "Mensuravel", "Atingivel", "Relevante"])
     return pd.read_csv(DATA_FILE)
 
-# Categorias SMART
-categorias = ["Pessoal", "Profissional", "Atividade Física", "Saúde", "Estética", 
-              "Familiar", "Espiritual", "Educacional", "Viagem", "Entretenimento", "Diversos"]
+# Interface
+st.title("🚀 Treinador de Metas SMART")
+st.write("Bem-vindo! Este app vai te guiar para que suas metas sejam inabaláveis.")
 
-st.title("🎯 Gestão de Metas SMART")
+# Dicionário de conceitos
+conceitos = {
+    "S": "Específica: O que exatamente? Quem? Onde? Evite ambiguidades.",
+    "M": "Mensurável: Qual o número/indicador de sucesso? Como você vai medir?",
+    "A": "Atingível: É realista com seus recursos e tempo atuais?",
+    "R": "Relevante: Por que importa? Conecta-se com seu propósito?",
+    "T": "Temporal: Qual a data limite exata (Dia/Mês/Ano)?"
+}
 
-# Formulário de Cadastro
-with st.form("nova_meta"):
-    col1, col2 = st.columns(2)
-    meta_desc = col1.text_input("Descrição da Meta (Específica)")
-    categoria = col2.selectbox("Categoria", categorias)
-    prazo = col1.date_input("Prazo Final")
-    status = col2.selectbox("Status", ["A iniciar", "Em andamento", "Atingida"])
-    
-    if st.form_submit_button("Cadastrar Meta"):
-        df = load_data()
-        nova_meta = pd.DataFrame([{"Meta": meta_desc, "Categoria": categoria, "Prazo": str(prazo), "Status": status}])
-        df = pd.concat([df, nova_meta], ignore_index=True)
-        df.to_csv(DATA_FILE, index=False)
-        st.success("Meta cadastrada!")
-
-# Exibição e Lógica de Cores
-st.subheader("Suas Metas")
 df = load_data()
 
-if not df.empty:
-    def highlight_expired(row):
-        is_expired = datetime.strptime(row['Prazo'], '%Y-%m-%d').date() < datetime.now().date()
-        if is_expired and row['Status'] != "Atingida":
-            return ['color: red'] * len(row)
-        return [''] * len(row)
+with st.form("smart_form"):
+    st.subheader("Cadastro Assistido")
+    
+    categoria = st.selectbox("Categoria", ["Pessoal", "Profissional", "Saúde", "Financeiro", "Educacional", "Outros"])
+    
+    # Validação de Categoria (Limite de 3)
+    if len(df[df['Categoria'] == categoria]) >= 3:
+        st.error(f"Limite de 3 metas atingido para {categoria}. Focar é essencial para o sucesso!")
+        st.stop()
 
-    st.dataframe(df.style.apply(highlight_expired, axis=1), use_container_width=True)
+    meta = st.text_input("Nome da Meta")
+    
+    # Campos SMART com ajuda
+    with st.expander("📝 Detalhando a metodologia SMART"):
+        esp = st.text_area("S - O que exatamente você quer alcançar?")
+        med = st.text_input("M - Qual o indicador numérico/físico?")
+        atg = st.text_area("A - Por que essa meta é possível para você hoje?")
+        rel = st.text_area("R - Por que essa meta é prioritária?")
+        prazo = st.date_input("T - Qual a data limite?")
+        
+        # Validação de Prazo (Limite de 3)
+        if len(df[df['Prazo'] == str(prazo)]) >= 3:
+            st.error("Já existem 3 metas para esta data. Escolha outro prazo para garantir foco total.")
+            st.stop()
 
-    # Botão de Exportação
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button("📥 Baixar Metas (CSV)", csv, "metas.csv", "text/csv")
-else:
-    st.info("Nenhuma meta cadastrada ainda.")
+    if st.form_submit_button("Validar e Cadastrar"):
+        # Modal de Confirmação (Simulação via st.warning)
+        st.warning("⚖️ Tribunal da Meta: Você respondeu tudo com honestidade? Se a meta for grande, quebre-a em menores. Se for vaga, especifique.")
+        
+        nova_meta = pd.DataFrame([{
+            "Meta": meta, "Categoria": categoria, "Prazo": str(prazo), 
+            "Status": "A iniciar", "Especifico": esp, "Mensuravel": med,
+            "Atingivel": atg, "Relevante": rel
+        }])
+        
+        df = pd.concat([df, nova_meta], ignore_index=True)
+        df.to_csv(DATA_FILE, index=False)
+        st.success("Meta SMART registrada com sucesso!")
+
+# Exibição
+st.dataframe(df, use_container_width=True)
