@@ -27,7 +27,7 @@ def load_data():
 with st.sidebar:
     try:
         # Certifique-se que o arquivo 2M5A9622-Editar.jpg esteja na pasta raiz
-        image = Image.open('2M5A9622-Editar.jpg') 
+        image = Image.open('2M5A9622-Editar.jpg.jpeg) 
         st.image(image, use_column_width=True)
     except:
         st.warning("Foto da mentora não encontrada na pasta raiz.")
