@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
-import os  # <--- A IMPORTAÇÃO QUE FALTAVA
+import os
 from datetime import datetime
 from PIL import Image
 
-# --- CONFIGURAÇÃO DE ESTILO ---
+# --- CONFIGURAÇÃO ---
 st.set_page_config(page_title="Treinador SMART", layout="wide")
 
 st.markdown("""
@@ -12,7 +12,6 @@ st.markdown("""
     .main { background-color: #FDFBF8; }
     h1, h2, h3 { color: #8B5E3C; font-family: 'Helvetica', sans-serif; }
     .stButton>button { background-color: #8B5E3C; color: white; border-radius: 5px; }
-    .stDownloadButton>button { background-color: #D4A373; color: white; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -26,32 +25,23 @@ def load_data():
 # --- SIDEBAR ---
 with st.sidebar:
     try:
-        # Certifique-se que o arquivo 2M5A9622-Editar.jpg esteja na pasta raiz
-        image = Image.open('2M5A9622-Editar.jpg.jpeg') 
-        st.image(image, use_column_width=True)
+        image = Image.open('2M5A9622-Editar.jpg') 
+        st.image(image, width=300)
     except:
-        st.warning("Foto da mentora não encontrada na pasta raiz.")
-    
+        st.warning("Foto da mentora não encontrada.")
     st.markdown("---")
-    if st.button("Ir para Arte em Vender"):
-        st.link_button("Acesse o site oficial", "https://arteemvender.com/")
+    st.link_button("Acesse o Arte em Vender", "https://arteemvender.com/", use_container_width=True)
 
-# --- CORPO DO APP ---
+# --- CORPO ---
 st.title("🎯 Treinador de Metas SMART")
-st.write("Bem-vindo! Este app vai te guiar para que suas metas sejam inabaláveis.")
-
 df = load_data()
 
-with st.form("smart_form"):
-    st.subheader("Cadastro Assistido")
-    
-    categoria = st.selectbox("Categoria", ["Pessoal", "Profissional", "Saúde", "Financeiro", "Educacional", "Outros"])
-    
-    # Validação: Limite de 3 metas por categoria
-    if len(df[df['Categoria'] == categoria]) >= 3:
-        st.error(f"Limite de 3 metas atingido para {categoria}. Focar é essencial!")
-        st.stop()
+# Validações prévias fora do form
+categorias_disponiveis = ["Pessoal", "Profissional", "Saúde", "Financeiro", "Educacional", "Outros"]
+st.subheader("Cadastro Assistido")
 
+with st.form("smart_form"):
+    categoria = st.selectbox("Categoria", categorias_disponiveis)
     meta = st.text_input("Nome da Meta")
     
     with st.expander("📝 Detalhando a metodologia SMART"):
@@ -61,10 +51,17 @@ with st.form("smart_form"):
         rel = st.text_area("R - Por que essa meta é prioritária?")
         prazo = st.date_input("T - Qual a data limite?")
         
-    if st.form_submit_button("Validar e Cadastrar"):
-        # Validação: Limite de 3 metas por data
-        if len(df[df['Prazo'] == str(prazo)]) >= 3:
-            st.error("Já existem 3 metas para esta data. Escolha outro prazo para garantir foco.")
+    submitted = st.form_submit_button("Validar e Cadastrar")
+
+    if submitted:
+        # Lógica de validação pós-clique
+        limite_cat = len(df[df['Categoria'] == categoria]) >= 3
+        limite_prazo = len(df[df['Prazo'] == str(prazo)]) >= 3
+        
+        if limite_cat:
+            st.error(f"⚠️ Limite de 3 metas atingido para {categoria}. Focar é essencial!")
+        elif limite_prazo:
+            st.error("⚠️ Já existem 3 metas para esta data. Escolha outro prazo para garantir foco.")
         else:
             nova_meta = pd.DataFrame([{
                 "Meta": meta, "Categoria": categoria, "Prazo": str(prazo), 
@@ -76,5 +73,5 @@ with st.form("smart_form"):
             st.success("Meta SMART registrada com sucesso!")
             st.rerun()
 
-st.subheader("Suas Metas")
+st.subheader("Suas Metas Cadastradas")
 st.dataframe(df, use_container_width=True)
